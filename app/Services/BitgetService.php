@@ -24,7 +24,7 @@ class BitgetService
 
     private function sign($timestamp, $method, $requestPath, $body = '')
     {
-        $message = $timestamp.strtoupper($method).$requestPath.$body;
+        $message = $timestamp . strtoupper($method) . $requestPath . $body;
 
         return base64_encode(hash_hmac('sha256', $message, $this->apiSecret, true));
     }
@@ -45,7 +45,7 @@ class BitgetService
             'ACCESS-TIMESTAMP' => $timestamp,
             'ACCESS-PASSPHRASE' => $this->passphrase,
             'Content-Type' => 'application/json',
-        ])->get($this->baseUrl.$endpoint);
+        ])->get($this->baseUrl . $endpoint);
 
         return $response->json();
     }
