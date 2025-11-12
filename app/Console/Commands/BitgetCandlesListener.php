@@ -32,8 +32,8 @@ class BitgetCandlesListener extends Command
         while (true) {
             try {
                 $client = new Client("wss://ws.bitget.com/v2/ws/public", [
-                    'timeout' => null,
-                    'fragment_size' => 4096, // evita cortes en mensajes grandes
+                    'timeout' => 90, // mantené esto positivo
+                    'fragment_size' => 4096, // evita cortes
                 ]);
 
                 $client->send(json_encode($subscribe));
@@ -48,7 +48,7 @@ class BitgetCandlesListener extends Command
                         throw new \Exception('Empty read; connection dead?');
                     }
 
-                    // 🔹 Bitget manda mensajes comprimidos con zlib (no gzip)
+                    // 🔹 Bitget manda mensajes comprimidos con zlib
                     if (is_string($msg) && substr($msg, 0, 2) === "\x78\x9c") {
                         $decoded = @gzdecode($msg);
                         if ($decoded === false) {
@@ -60,19 +60,26 @@ class BitgetCandlesListener extends Command
                     $data = json_decode($msg, true);
                     if (!$data) continue;
 
-                    // Evento de suscripción
+                    // 🔹 Evento de suscripción
                     if (isset($data['event']) && $data['event'] === 'subscribe') {
                         $this->line('[EVENT] Suscripción confirmada a ' . ($data['arg']['channel'] ?? ''));
                         continue;
                     }
 
-                    // Pong
-                    if ($msg === 'pong' || (isset($data['event']) && $data['event'] === 'pong')) {
+                    // 🔹 PONG recibido
+                    if (isset($data['event']) && $data['event'] === 'pong') {
                         $this->line('[PONG] recibido');
                         continue;
                     }
 
-                    // Ignorar mensajes sin datos
+                    // 🔹 Ping keepalive cada 30 s
+                    if (time() - $lastPing >= 30) {
+                        $client->send(json_encode(['op' => 'ping']));
+                        $this->line('[PING] enviado');
+                        $lastPing = time();
+                    }
+
+                    // 🔹 Ignorar mensajes sin datos
                     if (empty($data['data'][0]) || empty($data['arg']['instId'])) {
                         continue;
                     }
@@ -94,7 +101,7 @@ class BitgetCandlesListener extends Command
                     // 🔹 Cachear último candle
                     Cache::put("bitget_candle_{$symbol}", $candleData, 300);
 
-                    // 🔹 Histórico
+                    // 🔹 Histórico limitado a 50 velas
                     $key = "bitget_candles_{$symbol}";
                     $history = Cache::get($key, []);
                     $history[] = $candleData;
@@ -104,19 +111,8 @@ class BitgetCandlesListener extends Command
                     Cache::put($key, $history, 300);
 
                     $this->info("[{$symbol}] Cierre: {$candleData['close']}");
-                    // 🔹 Ping keepalive cada 30 s
-                    if (time() - $lastPing >= 30) {
-                        $client->send(json_encode(['op' => 'ping']));
-                        $this->line('[PING] enviado');
-                        $lastPing = time();
-                        continue; // evita procesar otro mensaje en el mismo ciclo
-                    }
 
-                    // 🔹 Respuesta PONG
-                    if (isset($data['event']) && $data['event'] === 'pong') {
-                        $this->line('[PONG] recibido');
-                        continue;
-                    }
+                    usleep(100000); // Evita CPU al 100%
                 }
             } catch (\Throwable $e) {
                 $this->error('❌ Error: ' . $e->getMessage());
