@@ -1,0 +1,108 @@
+image: gitlab.simplificadc.com.ar:5050/desarrollo/simply-deploy-image-php:latest
+
+variables:
+  DOCKER_AUTH_CONFIG: "{\"auths\":{\"gitlab.simplificadc.com.ar:5050\":{\"auth\":\"Z2xwYXQtX21ieUZNeDd0cW5VZW9vc1A5ZDgK\"}}}"
+  FF_GITLAB_REGISTRY_HELPER_IMAGE: 1
+
+
+stages:
+  - "test"
+  - "branch_deploy"
+  - "production"
+
+
+test:
+  stage: "test"
+  script:
+    - ./vendor/bin/paratest
+  before_script:
+    - "mkdir -p ~/.ssh/"
+    - "[[ -f $SSH_KEY ]] && cat $SSH_KEY | openssl base64 -A -d > ~/.ssh/id_rsa || echo $SSH_KEY | openssl base64 -A -d > ~/.ssh/id_rsa"
+    - "chmod 0600 ~/.ssh/id_rsa"
+    - "cat ~/.ssh/id_rsa | md5sum"
+    - "eval $(ssh-agent -s)"
+    - "[[ ! -d /cache ]] && mkdir /cache"
+    - "REMOTE_DIR=\"${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}\""
+    - "scp -o StrictHostKeyChecking=no store@172.30.100.1:~/${REMOTE_DIR}/* /cache || ssh -o StrictHostKeyChecking=no store@172.30.100.1 \"mkdir -p ~/${REMOTE_DIR}/\""
+    - "[[ ! -e * ]] && echo No hay archivos en $(pwd)"
+    - "[[ -e * ]] && chown -R www-data:www-data *"
+    - "[[ -f /cache/vendor.tar.gz ]] && tar -xzf /cache/vendor.tar.gz"
+    - "composer install --no-ansi --no-interaction --no-progress"
+    - cp .env.example .env
+    - "php artisan key:generate"
+  after_script:
+    - "[[ -d /cache ]] && [[ -d vendor/ ]] && tar -czf /cache/vendor.tar.gz vendor/"
+    - "scp -o StrictHostKeyChecking=no /cache/* store@172.30.100.1:~/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}/"
+
+
+branch_deploy:
+  stage: "branch_deploy"
+  script:
+    - "ssh -o StrictHostKeyChecking=no deployer@172.30.100.45 \"~/simply-deploy-ci/simply-deploy-ci.sh start ${CI_PROJECT_NAME} ${CI_PROJECT_NAMESPACE} ${CI_COMMIT_REF_SLUG} ${CI_COMMIT_BRANCH}\""
+  except:
+    - prod
+    - update-dependencies
+  environment:
+    name: "${CI_COMMIT_REF_SLUG}"
+    url: "https://${CI_COMMIT_REF_SLUG}.${CI_PROJECT_NAME}.${CI_PROJECT_NAMESPACE}.dev.simplificadc.com.ar/"
+    on_stop: stop_branch_deploy
+    auto_stop_in: 1 week
+  before_script:
+    - "command -v ssh-agent >/dev/null || ( apt update && apt -y install openssh-client )"
+    - "mkdir -p ~/.ssh/"
+    - "[[ -f $SSH_KEY ]] && cat $SSH_KEY | openssl base64 -A -d > ~/.ssh/id_rsa || echo $SSH_KEY | openssl base64 -A -d > ~/.ssh/id_rsa"
+    - "chmod 0600 ~/.ssh/id_rsa"
+    - "cat ~/.ssh/id_rsa | md5sum"
+    - "eval $(ssh-agent -s)"
+
+
+stop_branch_deploy:
+  stage: "branch_deploy"
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - "ssh -o StrictHostKeyChecking=no deployer@172.30.100.45 \"~/simply-deploy-ci/simply-deploy-ci.sh stop ${CI_PROJECT_NAME} ${CI_PROJECT_NAMESPACE} ${CI_COMMIT_REF_SLUG} ${CI_COMMIT_BRANCH}\""
+  environment:
+    name: "${CI_COMMIT_REF_SLUG}"
+    action: stop
+  rules:
+    - if: $CI_COMMIT_REF_SLUG == 'prod'
+      when: never
+    - if: $CI_COMMIT_REF_SLUG == 'main'
+      when: never
+    - if: $CI_COMMIT_REF_SLUG == 'master'
+      when: never
+    - if: $CI_COMMIT_REF_SLUG == 'staging'
+      when: never
+    - if: $CI_COMMIT_REF_SLUG == 'update-dependencies'
+      when: never
+    - when: manual
+  before_script:
+    - "command -v ssh-agent >/dev/null || ( apt update && apt -y install openssh-client )"
+    - "mkdir -p ~/.ssh/"
+    - "[[ -f $SSH_KEY ]] && cat $SSH_KEY | openssl base64 -A -d > ~/.ssh/id_rsa || echo $SSH_KEY | openssl base64 -A -d > ~/.ssh/id_rsa"
+    - "chmod 0600 ~/.ssh/id_rsa"
+    - "cat ~/.ssh/id_rsa | md5sum"
+    - "[[ -f $KNOWN_HOSTS ]] && cat $KNOWN_HOSTS | openssl base64 -A -d > ~/.ssh/known_hosts || echo $KNOWN_HOSTS | openssl base64 -A -d > ~/.ssh/known_hosts"
+    - "cat ~/.ssh/known_hosts | md5sum"
+    - "eval $(ssh-agent -s)"
+
+
+deploy_production:
+  stage: "production"
+  script:
+    - "ssh -o StrictHostKeyChecking=no serviceflow@172.30.100.25 \"~/bin/deploy.sh\""
+  environment:
+    name: "production"
+    url: "https://serviceflow.apps.simplificadc.com.ar/"
+  only:
+    - "prod"
+  before_script:
+    - "command -v ssh-agent >/dev/null || ( apt update && apt -y install openssh-client )"
+    - "mkdir -p ~/.ssh/"
+    - "[[ -f $SSH_KEY ]] && cat $SSH_KEY | openssl base64 -A -d > ~/.ssh/id_rsa || echo $SSH_KEY | openssl base64 -A -d > ~/.ssh/id_rsa"
+    - "chmod 0600 ~/.ssh/id_rsa"
+    - "cat ~/.ssh/id_rsa | md5sum"
+    - "[[ -f $KNOWN_HOSTS ]] && cat $KNOWN_HOSTS | openssl base64 -A -d > ~/.ssh/known_hosts || echo $KNOWN_HOSTS | openssl base64 -A -d > ~/.ssh/known_hosts"
+    - "cat ~/.ssh/known_hosts | md5sum"
+    - "eval $(ssh-agent -s)"

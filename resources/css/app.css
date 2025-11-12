@@ -1,3 +1,102 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.toast-success {
+    background-color: #16a34a !important;
+    /* verde */
+    color: white !important;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 500;
+    max-width: 400px;
+    text-align: center;
+}
+
+.toast-error {
+    background-color: #dc2626 !important;
+    /* rojo */
+    color: white !important;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 500;
+    max-width: 400px;
+    text-align: center;
+}
+
+.toast-warning {
+    background-color: #facc15 !important;
+    /* amarillo */
+    color: black !important;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 500;
+    max-width: 400px;
+    text-align: center;
+}
+
+.toast-info {
+    background-color: #2563eb !important;
+    /* azul */
+    color: white !important;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 500;
+    max-width: 400px;
+    text-align: center;
+}
+
+.toast-default {
+    background-color: #374151 !important;
+    /* gris */
+    color: white !important;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 500;
+    max-width: 400px;
+    text-align: center;
+}
+
+/* Tom Select – armonizado con los inputs Tailwind */
+.ts-control {
+    border-radius: 0.5rem !important;
+    /* igual que rounded-lg */
+    border: 1px solid #e5e7eb !important;
+    /* border-gray-200 */
+    background-color: #f9fafb !important;
+    /* bg-gray-50 */
+    color: #1f2937 !important;
+    /* text-gray-800 */
+    font-size: 0.875rem !important;
+    /* text-sm */
+    padding: 0.625rem 0.75rem !important;
+    /* px-3 py-2.5 */
+    min-height: 42px !important;
+    /* para igualar la altura */
+    box-shadow: none !important;
+}
+
+.ts-control--focus {
+    border-color: #3b82f6 !important;
+    /* azul tailwind */
+    box-shadow: 0 0 0 1px #3b82f6 !important;
+    background-color: #fff !important;
+}
+
+.ts-dropdown {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+.ts-dropdown .option {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+}
+
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+    background-color: #eaf0ff !important;
+    color: #0a2d6b !important;
+}

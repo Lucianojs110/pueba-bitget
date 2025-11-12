@@ -12,6 +12,7 @@
             <p class="mt-2 text-gray-600 text-sm">
                 Desde aquí vas a poder gestionar tu cuenta Bidget
             </p>
+            </p>
         </div>
 
     </div>
