@@ -134,7 +134,7 @@
                     @yield('content')
                 @endif
             </main>
-            <<<<<<< HEAD=======>>>>>>> 900bdff4dcc02e31793aa14c3c13c97195b0cf55
+
         </div>
     </div>
 
