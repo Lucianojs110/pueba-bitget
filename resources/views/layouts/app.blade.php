@@ -94,12 +94,10 @@
 
                     <!-- Menú desplegable -->
                     <div x-show="openUserMenu" x-cloak @click.outside="openUserMenu = false"
-                        @keydown.escape.window="openUserMenu = false" x-transition.origin.top.right <<<<<<< HEAD
+                        @keydown.escape.window="openUserMenu = false" x-transition.origin.top.right
                         class="absolute right-0 top-full w-64 bg-white border border-gray-200 rounded-md shadow-lg z-[10000] text-center"
                         style="margin-top: 75px;">
-                        =======
-                        class="absolute right-0 top-full w-64 bg-white border border-gray-200 rounded-md shadow-lg z-[10000] text-center">
-                        >>>>>>> 900bdff4dcc02e31793aa14c3c13c97195b0cf55
+
 
                         <div class="py-3 text-sm text-gray-700">
                             <div class="px-4 pb-3 border-b border-gray-100">
