@@ -32,7 +32,7 @@ class BitgetCandlesListener extends Command
         while (true) {
             try {
                 $client = new Client("wss://ws.bitget.com/v2/ws/public", [
-                    'timeout' => 90,
+                    'timeout' => null,
                     'fragment_size' => 4096, // evita cortes en mensajes grandes
                 ]);
 
@@ -104,12 +104,18 @@ class BitgetCandlesListener extends Command
                     Cache::put($key, $history, 300);
 
                     $this->info("[{$symbol}] Cierre: {$candleData['close']}");
-
                     // 🔹 Ping keepalive cada 30 s
                     if (time() - $lastPing >= 30) {
-                        $client->send('ping');
+                        $client->send(json_encode(['op' => 'ping']));
                         $this->line('[PING] enviado');
                         $lastPing = time();
+                        continue; // evita procesar otro mensaje en el mismo ciclo
+                    }
+
+                    // 🔹 Respuesta PONG
+                    if (isset($data['event']) && $data['event'] === 'pong') {
+                        $this->line('[PONG] recibido');
+                        continue;
                     }
                 }
             } catch (\Throwable $e) {
