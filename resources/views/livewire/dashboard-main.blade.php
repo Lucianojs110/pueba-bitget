@@ -1,4 +1,5 @@
-<div class="p-6 bg-white text-gray-900 rounded-xl shadow-md">
+<div wire:poll.5s="refreshPrices" class="p-6 bg-white text-gray-900 rounded-xl shadow-md">
+
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-gray-800">
             Mercado en Tiempo Real (Bitget)
